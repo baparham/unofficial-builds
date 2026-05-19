@@ -37,12 +37,16 @@ cd "${nodeDir}/deps/v8/src"
 cd "${nodeDir}"
 
 export CCACHE_BASEDIR="$PWD"
-export CC="ccache gcc"
-export CXX="ccache g++"
 export MAJOR_VERSION=$(echo ${fullversion} | cut -d . -f 1 | tr --delete v)
 
 . /opt/gcc13/enable
 export PATH="/opt/python312/bin:${PATH}"
+export CC="ccache /opt/gcc13/bin/gcc"
+export CXX="ccache /opt/gcc13/bin/g++"
+
+# Patch Node.js configure.py bug: try_check_compiler error path returns 5 values
+# but check_compiler unpacks into 4. Fix by trimming the error return to 4 values.
+sed -i "s/return (False, False, '', '', False)/return (False, False, None, (0, 0, 0))/" configure.py
 
 make -j$(getconf _NPROCESSORS_ONLN) binary V= \
   DESTCPU="x64" \
