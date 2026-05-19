@@ -11,11 +11,18 @@ on:
         description: 'Node.js version to build (e.g. v24.15.0)'
         required: true
         default: 'v24.15.0'
+  push:
+    branches:
+      - node-24
+      - copilot/update-dockerfile-gcc-python-source
 
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 180
+    env:
+      RECIPE: ${{ inputs.recipe || 'x64-glibc-217' }}
+      NODE_VERSION: ${{ inputs.node_version || 'v24.15.0' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -26,16 +33,17 @@ jobs:
 
       - name: Build recipe
         run: |
-          ./bin/local_build.sh -r "${{ inputs.recipe }}" -v "${{ inputs.node_version }}"
+          ./bin/local_build.sh -r "${{ env.RECIPE }}" -v "${{ env.NODE_VERSION }}"
+          echo "STAGING_DIR=$(realpath "$GITHUB_WORKSPACE/../staging")" >> "$GITHUB_ENV"
 
       - name: List build artifacts
         run: |
-          find ../staging -name 'node-*' -type f 2>/dev/null || echo "No artifacts found"
-          ls -lh ../staging/release/${{ inputs.node_version }}/ 2>/dev/null || true
+          find "$STAGING_DIR" -name 'node-*' -type f 2>/dev/null || echo "No artifacts found"
+          ls -lh "$STAGING_DIR/release/${{ env.NODE_VERSION }}/" 2>/dev/null || true
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: node-${{ inputs.node_version }}-${{ inputs.recipe }}
-          path: ../staging/release/${{ inputs.node_version }}/node-*.tar.*
+          name: node-${{ env.NODE_VERSION }}-${{ env.RECIPE }}
+          path: ${{ env.STAGING_DIR }}/release/${{ env.NODE_VERSION }}/node-*.tar.*
           if-no-files-found: warn

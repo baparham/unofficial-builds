@@ -17,8 +17,10 @@ cd /home/node
 
 tar -xf node.tar.xz
 
+nodeDir="/home/node/node-${fullversion}"
+
 # configuring cares correctly to not use sys/random.h on this target
-cd "node-${fullversion}"/deps/cares
+cd "${nodeDir}/deps/cares"
 sed -i 's/define HAVE_SYS_RANDOM_H 1/undef HAVE_SYS_RANDOM_H/g' ./config/linux/ares_config.h
 sed -i 's/define HAVE_GETRANDOM 1/undef HAVE_GETRANDOM/g' ./config/linux/ares_config.h
 
@@ -27,17 +29,24 @@ if [[ "$(grep -o 'ARES_VERSION_STR "[^"]*"' ./include/ares_version.h | awk '{pri
   sed -i 's/MSG_FASTOPEN/TCP_FASTOPEN_CONNECT/g' ./src/lib/ares__socket.c
 fi
 
-cd /home/node
+# Linux implementation of experimental WASM memory control requires Linux 3.17 & glibc 2.27 so disable it
+cd "${nodeDir}/deps/v8/src"
+[ -f wasm/wasm-objects.cc ] && sed -i -e 's/#if V8_TARGET_OS_LINUX/#if false/g' wasm/wasm-objects.cc
+[ -f d8/d8.cc ] && sed -i -e 's/#if V8_TARGET_OS_LINUX/#if false/g' d8/d8.cc
 
-cd "node-${fullversion}"
+cd "${nodeDir}"
 
 export CCACHE_BASEDIR="$PWD"
-export CC="ccache gcc"
-export CXX="ccache g++"
 export MAJOR_VERSION=$(echo ${fullversion} | cut -d . -f 1 | tr --delete v)
 
-. /opt/rh/devtoolset-12/enable
-. /opt/rh/rh-python38/enable
+. /opt/gcc13/enable
+export PATH="/usr/lib/ccache:/opt/python312/bin:${PATH}"
+export CC="gcc"
+export CXX="g++"
+
+# Patch Node.js configure.py bug: try_check_compiler error path returns 5 values
+# but check_compiler unpacks into 4. Fix by trimming the error return to 4 values.
+sed -i "s/return (False, False, '', '', False)/return (False, False, None, (0, 0, 0))/" configure.py
 
 make -j$(getconf _NPROCESSORS_ONLN) binary V= \
   DESTCPU="x64" \
