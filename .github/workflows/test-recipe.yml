@@ -14,6 +14,7 @@ on:
   push:
     branches:
       - node-24
+      - copilot/update-dockerfile-gcc-python-source
 
 jobs:
   build:

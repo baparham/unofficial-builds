@@ -35,7 +35,7 @@ RUN --mount=type=tmpfs,target=/usr/src \
     cd /usr/src \
     && curl -fsSL https://www.python.org/ftp/python/3.12.11/Python-3.12.11.tar.xz | tar -xJ \
     && cd Python-3.12.11 \
-    && ./configure --prefix=/opt/python312 --enable-optimizations \
+    && ./configure --prefix=/opt/python312 \
     && make -j$(getconf _NPROCESSORS_ONLN) \
     && make install
 
