@@ -40,9 +40,9 @@ export CCACHE_BASEDIR="$PWD"
 export MAJOR_VERSION=$(echo ${fullversion} | cut -d . -f 1 | tr --delete v)
 
 . /opt/gcc13/enable
-export PATH="/opt/python312/bin:${PATH}"
-export CC="ccache /opt/gcc13/bin/gcc"
-export CXX="ccache /opt/gcc13/bin/g++"
+export PATH="/usr/lib/ccache:/opt/python312/bin:${PATH}"
+export CC="gcc"
+export CXX="g++"
 
 # Patch Node.js configure.py bug: try_check_compiler error path returns 5 values
 # but check_compiler unpacks into 4. Fix by trimming the error return to 4 values.

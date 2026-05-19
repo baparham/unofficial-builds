@@ -60,6 +60,13 @@ export MANPATH=/opt/gcc13/share/man:${MANPATH}
 export INFOPATH=/opt/gcc13/share/info:${INFOPATH}
 EOF
 
+# Set up ccache symlinks so that CC=gcc / CXX=g++ transparently go through ccache
+RUN mkdir -p /usr/lib/ccache \
+    && ln -s /usr/bin/ccache /usr/lib/ccache/gcc \
+    && ln -s /usr/bin/ccache /usr/lib/ccache/g++ \
+    && ln -s /usr/bin/ccache /usr/lib/ccache/cc \
+    && ln -s /usr/bin/ccache /usr/lib/ccache/c++
+
 COPY --chown=node:node run.sh /home/node/run.sh
 
 VOLUME /home/node/.ccache
