@@ -1,0 +1,41 @@
+name: Test Recipe Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      recipe:
+        description: 'Recipe to build (e.g. x64-glibc-217)'
+        required: true
+        default: 'x64-glibc-217'
+      node_version:
+        description: 'Node.js version to build (e.g. v24.15.0)'
+        required: true
+        default: 'v24.15.0'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free up disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
+          df -h
+
+      - name: Build recipe
+        run: |
+          ./bin/local_build.sh -r "${{ inputs.recipe }}" -v "${{ inputs.node_version }}"
+
+      - name: List build artifacts
+        run: |
+          find ../staging -name 'node-*' -type f 2>/dev/null || echo "No artifacts found"
+          ls -lh ../staging/release/${{ inputs.node_version }}/ 2>/dev/null || true
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: node-${{ inputs.node_version }}-${{ inputs.recipe }}
+          path: ../staging/release/${{ inputs.node_version }}/node-*.tar.*
+          if-no-files-found: warn
