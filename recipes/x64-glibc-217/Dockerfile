@@ -19,6 +19,7 @@ RUN ulimit -n 1024 \
          gcc \
          gcc-c++ \
          bzip2 \
+         bzip2-devel \
          xz \
          wget \
          zlib-devel \
