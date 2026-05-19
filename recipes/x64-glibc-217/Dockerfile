@@ -39,6 +39,15 @@ RUN --mount=type=tmpfs,target=/usr/src \
     && make -j$(getconf _NPROCESSORS_ONLN) \
     && make install
 
+# Build binutils 2.42 from source (CentOS 7's as/ld are too old for AVX-512 VBMI)
+RUN --mount=type=tmpfs,target=/usr/src \
+    cd /usr/src \
+    && curl -fsSL https://ftp.gnu.org/gnu/binutils/binutils-2.42.tar.xz | tar -xJ \
+    && cd binutils-2.42 \
+    && ./configure --prefix=/opt/gcc13 --disable-nls --disable-werror \
+    && make -j$(getconf _NPROCESSORS_ONLN) \
+    && make install
+
 # Build GCC 13 from source (https://gcc.gnu.org)
 RUN --mount=type=tmpfs,target=/usr/src \
     cd /usr/src \
@@ -51,6 +60,8 @@ RUN --mount=type=tmpfs,target=/usr/src \
          --enable-languages=c,c++ \
          --disable-multilib \
          --disable-bootstrap \
+         --with-as=/opt/gcc13/bin/as \
+         --with-ld=/opt/gcc13/bin/ld \
     && make -j$(getconf _NPROCESSORS_ONLN) \
     && make install \
     && cat > /opt/gcc13/enable << 'EOF'
