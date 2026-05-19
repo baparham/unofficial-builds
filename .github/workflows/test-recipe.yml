@@ -11,6 +11,9 @@ on:
         description: 'Node.js version to build (e.g. v24.15.0)'
         required: true
         default: 'v24.15.0'
+  push:
+    branches:
+      - node-24
 
 jobs:
   build:
