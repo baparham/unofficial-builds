@@ -11,7 +11,14 @@ commit="$5"
 fullversion="$6"
 source_url="$7"
 source_urlbase="$8"
-config_flags=""
+# The from-source GCC 13 in this image has no libstdc++_nonshared.a, so a normal
+# link would reference a shared libstdc++ far newer than the 4.8.5 CentOS 7
+# ships (GLIBCXX_3.4.19). --partly-static makes configure add -static-libgcc
+# -static-libstdc++, leaving a binary whose only runtime ABI dependency is
+# glibc. Permitted for redistribution by the GCC Runtime Library Exception,
+# which explicitly covers static linking of libstdc++/libgcc when the code was
+# built by an unmodified GCC.
+config_flags="--partly-static"
 
 cd /home/node
 
@@ -43,10 +50,10 @@ cd "${nodeDir}"
 export CCACHE_BASEDIR="$PWD"
 export MAJOR_VERSION=$(echo ${fullversion} | cut -d . -f 1 | tr --delete v)
 
-. /opt/rh/devtoolset-12/enable
+. /opt/gcc13/enable
 
-# Prepend after sourcing the devtoolset enable script so the ccache shims win and
-# ccache itself resolves the real gcc/g++ from devtoolset further down PATH.
+# Prepend after sourcing the enable script so the ccache shims win and ccache
+# itself resolves the real gcc/g++ from /opt/gcc13 further down PATH.
 export PATH="/usr/lib/ccache:/opt/python312/bin:${PATH}"
 export CC="gcc"
 export CXX="g++"

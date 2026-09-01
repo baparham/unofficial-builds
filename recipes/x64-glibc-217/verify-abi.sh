@@ -9,9 +9,10 @@
 # The defaults are what CentOS 7 itself provides:
 #   glibc 2.17        -> GLIBC_2.17
 #   libstdc++ 4.8.5   -> GLIBCXX_3.4.19, CXXABI_1.3.7
-# The devtoolset toolchain links anything newer than these out of
-# libstdc++_nonshared.a, so a reference above a floor means the build silently
-# fell back to a plain shared libstdc++ and the artifact must not be shipped.
+# This recipe builds with a from-source GCC 13 and links libstdc++/libgcc
+# statically (--partly-static), so a correct artifact references no GLIBCXX_ or
+# CXXABI_ versions at all. Any reference above a floor means the static link
+# silently did not happen and the artifact must not be shipped.
 
 set -e
 
@@ -93,7 +94,7 @@ fi
 
 # Strongest available proof: run the binary against this image's own CentOS 7
 # runtime. LD_LIBRARY_PATH is cleared because the build environment points it at
-# the devtoolset libraries, which would mask exactly the failure we are hunting.
+# /opt/gcc13/lib64, which would mask exactly the failure we are hunting.
 echo "verify-abi: smoke testing against the CentOS 7 runtime"
 env -u LD_LIBRARY_PATH -u LD_PRELOAD "$binary" -e 'console.log("verify-abi: " + process.version + " runs on " + process.platform + "/" + process.arch)'
 
