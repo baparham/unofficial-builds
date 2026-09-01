@@ -8,9 +8,9 @@ on:
         required: true
         default: 'x64-glibc-217'
       node_version:
-        description: 'Node.js version to build (e.g. v24.15.0)'
+        description: 'Node.js version to build (e.g. v24.20.0)'
         required: true
-        default: 'v24.15.0'
+        default: 'v24.20.0'
 
 jobs:
   build:
