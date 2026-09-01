@@ -8,14 +8,26 @@ on:
         required: true
         default: 'x64-glibc-217'
       node_version:
-        description: 'Node.js version to build (e.g. v24.15.0)'
+        description: 'Node.js version to build (e.g. v24.20.0)'
         required: true
-        default: 'v24.15.0'
+        default: 'v24.20.0'
+  # The "Run workflow" branch picker only offers refs that GitHub has already
+  # indexed for this workflow, so a recently created branch can be missing from
+  # it even though dispatching that ref via the API works fine. Keep a push
+  # trigger on the working branch so it can always build without the UI.
+  push:
+    branches:
+      - copilot/verify-glibc-requirements
 
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 180
+    # The `inputs` context is null for push events, so fall back to the same
+    # values the dispatch form defaults to.
+    env:
+      RECIPE: ${{ inputs.recipe || 'x64-glibc-217' }}
+      NODE_VERSION: ${{ inputs.node_version || 'v24.20.0' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -26,16 +38,17 @@ jobs:
 
       - name: Build recipe
         run: |
-          ./bin/local_build.sh -r "${{ inputs.recipe }}" -v "${{ inputs.node_version }}"
+          ./bin/local_build.sh -r "$RECIPE" -v "$NODE_VERSION"
+          echo "STAGING_DIR=$(realpath "$GITHUB_WORKSPACE/../staging")" >> "$GITHUB_ENV"
 
       - name: List build artifacts
         run: |
-          find ../staging -name 'node-*' -type f 2>/dev/null || echo "No artifacts found"
-          ls -lh ../staging/release/${{ inputs.node_version }}/ 2>/dev/null || true
+          find "$STAGING_DIR" -name 'node-*' -type f 2>/dev/null || echo "No artifacts found"
+          ls -lh "$STAGING_DIR/release/$NODE_VERSION/" 2>/dev/null || true
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: node-${{ inputs.node_version }}-${{ inputs.recipe }}
-          path: ../staging/release/${{ inputs.node_version }}/node-*.tar.*
+          name: node-${{ env.NODE_VERSION }}-${{ env.RECIPE }}
+          path: ${{ env.STAGING_DIR }}/release/${{ env.NODE_VERSION }}/node-*.tar.*
           if-no-files-found: warn
