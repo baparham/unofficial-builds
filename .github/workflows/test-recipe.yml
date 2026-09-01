@@ -27,15 +27,16 @@ jobs:
       - name: Build recipe
         run: |
           ./bin/local_build.sh -r "${{ inputs.recipe }}" -v "${{ inputs.node_version }}"
+          echo "STAGING_DIR=$(realpath "$GITHUB_WORKSPACE/../staging")" >> "$GITHUB_ENV"
 
       - name: List build artifacts
         run: |
-          find ../staging -name 'node-*' -type f 2>/dev/null || echo "No artifacts found"
-          ls -lh ../staging/release/${{ inputs.node_version }}/ 2>/dev/null || true
+          find "$STAGING_DIR" -name 'node-*' -type f 2>/dev/null || echo "No artifacts found"
+          ls -lh "$STAGING_DIR/release/${{ inputs.node_version }}/" 2>/dev/null || true
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: node-${{ inputs.node_version }}-${{ inputs.recipe }}
-          path: ../staging/release/${{ inputs.node_version }}/node-*.tar.*
+          path: ${{ env.STAGING_DIR }}/release/${{ inputs.node_version }}/node-*.tar.*
           if-no-files-found: warn
